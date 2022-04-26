@@ -1726,6 +1726,59 @@ class BFU_PT_BlenderForUnrealTool(bpy.types.Panel):
                     " (Active object is the owner of the collision)")
             return {'FINISHED'}
 
+    class BFU_OT_AddCollisionButtonBox(Operator):
+        bl_label = ""
+        bl_idname = "object.addboxcollision"
+        bl_description = (
+            "Add Unreal" +
+            " collision ready for export (Boxes type)")
+
+        def execute(self, context):
+            ref_obj = bpy.context.selected_objects[0]
+            cube = bpy.ops.mesh.primitive_cube_add()
+            obj = bpy.context.object
+            obj.matrix_world = ref_obj.matrix_world
+
+            p = 0
+            for v in ref_obj.bound_box:
+                if p == 0:
+                    pmin = mathutils.Vector((v[0], v[1], v[2]))
+                    pmax = pmin.copy()
+                else:
+                    for i in range (0, 3):
+                        pmin[i] = min(pmin[i], v[i])
+                        pmax[i] = max(pmax[i], v[i])
+                p = p + 1
+                        
+            size = pmax - pmin
+            center = pmin + size * 0.5
+            world_loc = ref_obj.matrix_world @ center
+            obj.location = world_loc
+            obj.scale = size * 0.5
+
+            ref_obj.select_set(True)
+            obj.select_set(True)
+            bpy.context.view_layer.objects.active = ref_obj
+
+            ConvertedObj = Ue4SubObj_set("Box")
+            if len(ConvertedObj) > 0:
+                self.report(
+                    {'INFO'},
+                    str(len(ConvertedObj)) +
+                    " object(s) of the selection have be" +
+                    " converted to UE4 Box collisions.")
+            else:
+                self.report(
+                    {'WARNING'},
+                    "Please select two objects." +
+                    " (Active object is the owner of the collision)")
+
+            ref_obj.select_set(True)
+            obj.select_set(False)
+            bpy.context.view_layer.objects.active = ref_obj
+
+            return {'FINISHED'}
+
     class BFU_OT_ConvertToCollisionButtonCapsule(Operator):
         bl_label = "Convert to capsule (UCP)"
         bl_idname = "object.converttocapsulecollision"
@@ -1931,6 +1984,10 @@ class BFU_PT_BlenderForUnrealTool(bpy.types.Panel):
             convertStaticCollisionButtons.operator("object.converttoconvexcollision", icon='MESH_ICOSPHERE')
             convertStaticCollisionButtons.operator("object.converttocapsulecollision", icon='MESH_CAPSULE')
             convertStaticCollisionButtons.operator("object.converttospherecollision", icon='MESH_UVSPHERE')
+
+            addStaticCollisionButtons = convertButtons.column()
+            addStaticCollisionButtons.enabled = len(bpy.context.selected_objects) == 1
+            addStaticCollisionButtons.operator("object.addboxcollision", icon='MESH_CUBE')
 
             convertButtons = layout.row().split(factor=0.80)
             convertStaticSocketButtons = convertButtons.column()
@@ -2861,6 +2918,7 @@ classes = (
 
     BFU_PT_BlenderForUnrealTool,
     BFU_PT_BlenderForUnrealTool.BFU_OT_ConvertToCollisionButtonBox,
+    BFU_PT_BlenderForUnrealTool.BFU_OT_AddCollisionButtonBox,
     BFU_PT_BlenderForUnrealTool.BFU_OT_ConvertToCollisionButtonCapsule,
     BFU_PT_BlenderForUnrealTool.BFU_OT_ConvertToCollisionButtonSphere,
     BFU_PT_BlenderForUnrealTool.BFU_OT_ConvertToCollisionButtonConvex,
