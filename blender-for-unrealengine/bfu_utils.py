@@ -1631,8 +1631,9 @@ def GetObjExportDir(obj, abspath=False):
     if GetAssetType(obj) == "SkeletalMesh":
         dirpath = os.path.join(
             scene.export_skeletal_file_path,
-            FolderName,
-            GetObjExportName(obj))
+            FolderName
+            # GetObjExportName(obj)
+            )
     if GetAssetType(obj) == "Alembic":
         dirpath = os.path.join(
             scene.export_alembic_file_path,
